@@ -261,7 +261,7 @@ When deploying the frontend to **Vercel**, **Netlify**, or **Render Static Sites
 4. In `src/api/client.js`, Axios automatically routes all API requests through this base URL:
    ```javascript
    const api = axios.create({
-     baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+     baseURL: import.meta.env.VITE_API_URL.replace(/\/+$/, ''),
      headers: { 'Content-Type': 'application/json' },
    });
    ```

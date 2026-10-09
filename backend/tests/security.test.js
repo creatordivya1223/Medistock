@@ -53,10 +53,33 @@ describe('MediStock Security & Middleware Suite', () => {
     expect(app.get('trust proxy')).toBe(1);
   });
 
-  it('Includes standard rate limit headers', async () => {
+  it('Includes standard rate limit headers on GET requests', async () => {
     const res = await request(app).get('/api/health');
     expect(res.headers).toHaveProperty('ratelimit-limit');
     expect(res.headers).toHaveProperty('ratelimit-remaining');
+  });
+
+  it('Handles CORS preflight OPTIONS requests with status 204 and headers', async () => {
+    const res = await request(app)
+      .options('/api/medicines')
+      .set('Origin', 'http://localhost:5173')
+      .set('Access-Control-Request-Method', 'POST')
+      .set('Access-Control-Request-Headers', 'Content-Type, Authorization');
+
+    expect(res.statusCode).toBe(204);
+    expect(res.headers['access-control-allow-origin']).toBe('http://localhost:5173');
+    expect(res.headers['access-control-allow-methods']).toContain('OPTIONS');
+    expect(res.headers['access-control-allow-headers']).toContain('Content-Type');
+  });
+
+  it('Skips rate limiting on OPTIONS preflight requests', async () => {
+    const res = await request(app)
+      .options('/api/medicines')
+      .set('Origin', 'http://localhost:5173');
+
+    expect(res.statusCode).toBe(204);
+    // Rate limit headers are skipped for OPTIONS
+    expect(res.headers['ratelimit-remaining']).toBeUndefined();
   });
 
   it('Refuses to start when JWT_SECRET is missing or invalid (< 32 chars)', () => {

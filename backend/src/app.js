@@ -30,35 +30,44 @@ app.disable('x-powered-by');
 app.use(helmet());
 
 // 4. Strict CORS configuration
-const allowedOrigins = env.CLIENT_URL.split(',')
+const clientUrlEnv = process.env.CLIENT_URL || env.CLIENT_URL || '';
+const allowedOrigins = clientUrlEnv
+  .split(',')
   .map((url) => url.trim().replace(/\/+$/, ''))
   .filter(Boolean);
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow non-browser requests (e.g. mobile apps, curl, internal health checks) without origin header
-      if (!origin) {
-        return callback(null, true);
-      }
-      const normalizedOrigin = origin.replace(/\/+$/, '');
-      if (allowedOrigins.includes(normalizedOrigin)) {
-        return callback(null, true);
-      }
-      return callback(new AppError('Blocked by CORS policy: Origin not allowed', 403));
-    },
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-  })
-);
+// Log parsed allowed origins once at startup for Render logs observability
+console.log('🔒 CORS Allowed Origins:', allowedOrigins);
 
-// 5. Global rate limiter (100 requests per 15 minutes per IP)
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow non-browser requests (e.g. mobile apps, curl, internal health checks) without origin header
+    if (!origin) {
+      return callback(null, true);
+    }
+    const normalizedOrigin = origin.trim().replace(/\/+$/, '');
+    if (allowedOrigins.includes(normalizedOrigin)) {
+      return callback(null, true);
+    }
+    console.warn(`[CORS Blocked] Origin: ${origin}`);
+    return callback(new AppError('Blocked by CORS policy: Origin not allowed', 403));
+  },
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  optionsSuccessStatus: 204,
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+
+// 5. Global rate limiter (100 requests per 15 minutes per IP, skipping OPTIONS preflights)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.method === 'OPTIONS',
   message: {
     success: false,
     message: 'Too many requests from this IP, please try again after 15 minutes.',
