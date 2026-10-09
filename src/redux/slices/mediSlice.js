@@ -1,123 +1,160 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import api from "../../api/client";
 
-const savedMedicines = JSON.parse(
-  localStorage.getItem("medicines")
+export const fetchMedicines = createAsyncThunk(
+  "medicines/fetchMedicines",
+  async (params = {}, { rejectWithValue }) => {
+    try {
+      const response = await api.get("/medicines", { params });
+      return {
+        medicines: response.data.data,
+        pagination: response.data.pagination,
+      };
+    } catch (err) {
+      const message =
+        err.response?.data?.message || "Failed to fetch medicines";
+      return rejectWithValue(message);
+    }
+  }
 );
 
-const defaultMedicines = [
-  {
-    id: 1,
-    name: "Paracetamol",
-    price: 50,
-    stock: 100,
-    category: "Tablet",
-    expiry: "2026-07-01",
-  },
-  {
-    id: 2,
-    name: "Ibuprofen",
-    price: 60,
-    stock: 0,
-    category: "Tablet",
-    expiry: "2026-09-01",
-  },
-  {
-    id: 3,
-    name: "Combiflam",
-    price: 80,
-    stock: 10,
-    category: "Tablet",
-    expiry: "2027-05-01",
-  },
-  {
-    id: 4,
-    name: "Crocin",
-    price: 70,
-    stock: 90,
-    category: "Syrup",
-    expiry: "2027-04-01",
-  },
-  {
-    id: 5,
-    name: "Benadryl",
-    price: 80,
-    stock: 6,
-    category: "Syrup",
-    expiry: "2027-05-01",
-  },
-  {
-    id: 6,
-    name: "Tetanus",
-    price: 90,
-    stock: 0,
-    category: "Injection",
-    expiry: "2027-06-01",
-  },
-];
+export const addMedicine = createAsyncThunk(
+  "medicines/addMedicine",
+  async (medicineData, { rejectWithValue }) => {
+    try {
+      const response = await api.post("/medicines", medicineData);
+      return response.data.data;
+    } catch (err) {
+      const message =
+        err.response?.data?.errors?.[0]?.message ||
+        err.response?.data?.message ||
+        "Failed to add medicine";
+      return rejectWithValue(message);
+    }
+  }
+);
+
+export const editMedicine = createAsyncThunk(
+  "medicines/editMedicine",
+  async ({ id, ...updateData }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(`/medicines/${id}`, updateData);
+      return response.data.data;
+    } catch (err) {
+      const message =
+        err.response?.data?.errors?.[0]?.message ||
+        err.response?.data?.message ||
+        "Failed to update medicine";
+      return rejectWithValue(message);
+    }
+  }
+);
+
+export const deleteMedicine = createAsyncThunk(
+  "medicines/deleteMedicine",
+  async (id, { rejectWithValue }) => {
+    try {
+      await api.delete(`/medicines/${id}`);
+      return id;
+    } catch (err) {
+      const message =
+        err.response?.data?.message || "Failed to delete medicine";
+      return rejectWithValue(message);
+    }
+  }
+);
 
 const initialState = {
-  medicines:
-    savedMedicines && savedMedicines.length > 0
-      ? savedMedicines
-      : defaultMedicines,
+  medicines: [],
+  pagination: {
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 1,
+  },
+  loading: false,
+  error: null,
 };
 
 const mediSlice = createSlice({
   name: "medicines",
-
   initialState,
-
   reducers: {
-    AddMedicine: (state, action) => {
-      state.medicines.push(action.payload);
+    clearMediError: (state) => {
+      state.error = null;
     },
-
-    DelMedicine: (state, action) => {
-      state.medicines = state.medicines.filter(
-        (medicine) => medicine.id !== action.payload
-      );
-    },
-
-    EditMedicine: (state, action) => {
-      const {
-        id,
-        name,
-        price,
-        stock,
-        category,
-        expiry,
-      } = action.payload;
-
-      const existingMedicine = state.medicines.find(
-        (medicine) => medicine.id === id
-      );
-
-      if (existingMedicine) {
-        existingMedicine.name = name;
-        existingMedicine.price = price;
-        existingMedicine.stock = stock;
-        existingMedicine.category = category;
-        existingMedicine.expiry = expiry;
-      }
-    },
-
-    UpdateMedicine: (state, action) => {
-      const existingMedicine = state.medicines.find(
-        (medicine) => medicine.id === action.payload.id
-      );
-
-      if (existingMedicine) {
-        existingMedicine.stock = action.payload.stock;
-      }
-    },
+  },
+  extraReducers: (builder) => {
+    builder
+      // fetchMedicines
+      .addCase(fetchMedicines.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchMedicines.fulfilled, (state, action) => {
+        state.loading = false;
+        state.medicines = action.payload.medicines;
+        state.pagination = action.payload.pagination;
+      })
+      .addCase(fetchMedicines.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // addMedicine
+      .addCase(addMedicine.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(addMedicine.fulfilled, (state, action) => {
+        state.loading = false;
+        state.medicines.unshift(action.payload);
+        if (state.pagination) {
+          state.pagination.total += 1;
+        }
+      })
+      .addCase(addMedicine.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // editMedicine
+      .addCase(editMedicine.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(editMedicine.fulfilled, (state, action) => {
+        state.loading = false;
+        const updated = action.payload;
+        const index = state.medicines.findIndex(
+          (m) => (m.id || m._id) === (updated.id || updated._id)
+        );
+        if (index !== -1) {
+          state.medicines[index] = updated;
+        }
+      })
+      .addCase(editMedicine.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // deleteMedicine
+      .addCase(deleteMedicine.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteMedicine.fulfilled, (state, action) => {
+        state.loading = false;
+        state.medicines = state.medicines.filter(
+          (m) => (m.id || m._id) !== action.payload
+        );
+        if (state.pagination && state.pagination.total > 0) {
+          state.pagination.total -= 1;
+        }
+      })
+      .addCase(deleteMedicine.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      });
   },
 });
 
-export const {
-  AddMedicine,
-  DelMedicine,
-  EditMedicine,
-  UpdateMedicine,
-} = mediSlice.actions;
-
+export const { clearMediError } = mediSlice.actions;
 export default mediSlice.reducer;

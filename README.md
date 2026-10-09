@@ -1,16 +1,36 @@
-# React + Vite
+# MediStock — Pharmacy Inventory Management System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A full-stack, production-ready pharmacy inventory management web application built with React, Redux Toolkit, Node.js, Express, and MongoDB.
 
-Currently, two official plugins are available:
+## Features
+- **Medicine Inventory**: Real-time CRUD, stock level indicators, category tagging, batch expiration tracking, and search/filtering.
+- **Role-Based Access Control (RBAC)**: Secure JWT authentication with `admin` and `staff` permission levels.
+- **Interactive Dashboard & Reports**: Inventory valuation, category breakdowns, stock alerts, and downloadable reports.
+- **Enterprise Security**: Helmet headers, CORS origin restrictions, rate limiting with IP lockout, NoSQL injection protection, HPP, and audit logging.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Tech Stack
+- **Frontend**: React 19, Vite, Redux Toolkit, React Router 7, React Icons, Axios
+- **Backend**: Node.js, Express 4, Mongoose / MongoDB Atlas, Zod, JWT, Bcrypt
+- **Deployment**: Render (API Web Service), MongoDB Atlas (Cloud Database), Vercel/Netlify (Frontend)
 
-## React Compiler
+## Quick Start (Local Development)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 1. Backend Setup
+```bash
+cd backend
+npm install
+cp .env.example .env # customize your variables
+npm run seed        # seed initial admin & sample inventory
+npm run dev         # starts API at http://localhost:5000
+```
 
-## Expanding the ESLint configuration
+### 2. Frontend Setup
+```bash
+npm install
+npm run dev         # starts UI at http://localhost:5173
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Production Deployment Guide
+
+For full production deployment instructions with MongoDB Atlas and Render, please consult:
+👉 **[DEPLOYMENT.md](./DEPLOYMENT.md)**
