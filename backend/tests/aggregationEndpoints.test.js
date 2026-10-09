@@ -268,18 +268,21 @@ describe('Phase 6: Computed Endpoints & Aggregation Pipelines Checkpoint', () =>
       const syrup = report.categoryValuation.find((c) => c.category === 'Syrup');
       expect(syrup.totalItems).toBe(2);
       expect(syrup.totalUnits).toBe(96);
+      expect(syrup.totalStock).toBe(96);
       expect(syrup.totalValue).toBe(6780);
 
       // Tablet value: Paracetamol (5000) + Ibuprofen (0) + Combiflam (800) = 5800
       const tablet = report.categoryValuation.find((c) => c.category === 'Tablet');
       expect(tablet.totalItems).toBe(3);
       expect(tablet.totalUnits).toBe(110);
+      expect(tablet.totalStock).toBe(110);
       expect(tablet.totalValue).toBe(5800);
 
       // Injection value: Tetanus (0)
       const injection = report.categoryValuation.find((c) => c.category === 'Injection');
       expect(injection.totalItems).toBe(1);
       expect(injection.totalUnits).toBe(0);
+      expect(injection.totalStock).toBe(0);
       expect(injection.totalValue).toBe(0);
     });
   });

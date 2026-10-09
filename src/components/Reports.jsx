@@ -82,7 +82,7 @@ function Reports() {
         <div className="report-card">
           <FaBoxes />
           <h3>Total Units in Stock</h3>
-          <h2>{report.totalUnits}</h2>
+          <h2>{report.totalUnits?.toLocaleString() ?? 0}</h2>
         </div>
 
         <div className="report-card">
@@ -121,7 +121,7 @@ function Reports() {
                     <td>
                       <strong>{cat.category}</strong>
                     </td>
-                    <td>{cat.totalStock} units</td>
+                    <td>{(cat.totalUnits ?? cat.totalStock ?? 0).toLocaleString()} units</td>
                     <td>₹{cat.totalValue?.toLocaleString()}</td>
                     <td>{share}%</td>
                   </tr>

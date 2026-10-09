@@ -57,6 +57,7 @@ const getValuationReport = asyncHandler(async (req, res) => {
               category: '$_id',
               totalItems: 1,
               totalUnits: 1,
+              totalStock: '$totalUnits',
               totalValue: 1,
             },
           },
